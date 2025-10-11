@@ -5,9 +5,6 @@ const {
   updateClothingItem,
   deleteClothingItem,
 } = require("../controllers/clothingItem");
-const User = require("../models/user");
-const { getUsers, createUser } = require("../controllers/users");
-const mongoose = require("mongoose");
 
 router.get("/", getClothingItems);
 
