@@ -43,6 +43,8 @@ app.get("/", (req, res) => {
 
 // Global error handler to ensure JSON error responses
 app.use((err, req, res, next) => {
+  req.user = { _id: "64a7f3f4f1c2b8b5d6e8c9a0" }; // Example user ID
+
   // If response already sent, delegate to default handler
   if (res.headersSent) {
     return next(err);
