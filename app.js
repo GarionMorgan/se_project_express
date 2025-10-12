@@ -14,19 +14,13 @@ mongoose
   })
   .catch(console.error);
 
-// Global error handler to ensure JSON error responses
-app.use((err, req, res, next) => {
-  req.user = { _id: "64a7f3f4f1c2b8b5d6e8c9a0" }; // Example user ID
-
-  // If response already sent, delegate to default handler
-  if (res.headersSent) {
-    return next(err);
-  }
-  const status = err.statusCode || err.status || 500;
-  return res
-    .status(status)
-    .json({ message: err.message || "Internal Server Error" });
-});
+// Optional dev user middleware: set req.user when DEV_USER_ID is present
+if (process.env.DEV_USER_ID) {
+  app.use((req, res, next) => {
+    req.user = { _id: process.env.DEV_USER_ID };
+    next();
+  });
+}
 
 // Capture raw request body for fallback parsing in controllers (useful when tests
 // send bodies in odd ways). The `verify` option stores the raw buffer on req.rawBody
@@ -53,6 +47,15 @@ app.use(routes);
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
+});
+
+// Global error handler to ensure JSON error responses (must be last)
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = err.statusCode || err.status || 500;
+  return res
+    .status(status)
+    .json({ message: err.message || "Internal Server Error" });
 });
 
 app.listen(PORT, () => {
