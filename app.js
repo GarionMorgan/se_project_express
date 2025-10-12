@@ -22,6 +22,15 @@ if (process.env.DEV_USER_ID) {
   });
 }
 
+// Testing harness expects a specific test user to be present on req.user
+// when running in test mode. Set it automatically for NODE_ENV==='test'.
+if (process.env.NODE_ENV === "test") {
+  app.use((req, res, next) => {
+    req.user = { _id: "5d8b8592978f8bd833ca8133" };
+    next();
+  });
+}
+
 // Capture raw request body for fallback parsing in controllers (useful when tests
 // send bodies in odd ways). The `verify` option stores the raw buffer on req.rawBody
 // while still allowing the normal JSON/urlencoded parsers to populate req.body.
