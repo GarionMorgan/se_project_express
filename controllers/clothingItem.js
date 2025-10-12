@@ -246,64 +246,27 @@ const deleteClothingItem = (req, res) => {
 // Like clothing item
 const likeClothingItem = (req, res) => {
   const { itemId } = req.params;
+  const userId = req.user?._id;
+
+  if (!userId) {
+    return res.status(BAD_REQUEST).send({ message: "User not authenticated" });
+  }
+
   clothingItems
-    .findById(itemId)
-    .then((item) => {
-      if (!item) {
-        const error = new Error("Clothing item not found");
-        error.statusCode = NOT_FOUND;
-        throw error;
-      }
-      const userId = resolveUserId(req);
-      if (!userId) {
-        // log details to help diagnose why user id resolution failed (esp. for DELETE bodies)
-        console.error("likeClothingItem: resolveUserId returned null", {
-          method: req.method,
-          path: req.path,
-          headers: req.headers,
-          body: req.body,
-          query: req.query,
-          params: req.params,
-        });
-        logUnresolved(req);
-        // Optional test-mode fallback: when AUTO_TEST_USER=true, pick or create a user
-        if (process.env.AUTO_TEST_USER === "true") {
-          return User.findOne()
-            .then((u) => {
-              if (u) return u._id;
-              return User.create({
-                name: "__auto_test_user__",
-                avatar: "https://example.com/auto.png",
-              }).then((nu) => nu._id);
-            })
-            .then((uid) =>
-              clothingItems.findByIdAndUpdate(
-                itemId,
-                { $addToSet: { likes: uid } },
-                { new: true }
-              )
-            );
-        }
-        const error = new Error("User not authenticated");
-        error.statusCode = BAD_REQUEST;
-        throw error;
-      }
-      return clothingItems.findByIdAndUpdate(
-        itemId,
-        { $addToSet: { likes: userId } },
-        { new: true }
-      );
+    .findByIdAndUpdate(itemId, { $addToSet: { likes: userId } }, { new: true })
+    .orFail(() => {
+      const error = new Error("Clothing item not found");
+      error.statusCode = NOT_FOUND;
+      throw error;
     })
     .then((updatedItem) => res.status(OK).send(updatedItem))
     .catch((err) => {
-      if (err.name === "CastError")
+      if (err.name === "CastError") {
         return res.status(BAD_REQUEST).send({ message: "Invalid item ID" });
-      if (err.name === "DocumentNotFoundError")
-        return res
-          .status(NOT_FOUND)
-          .send({ message: "Clothing item not found" });
-      if (err.statusCode)
+      }
+      if (err.statusCode) {
         return res.status(err.statusCode).send({ message: err.message });
+      }
       return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
     });
 };
@@ -311,76 +274,27 @@ const likeClothingItem = (req, res) => {
 // Dislike clothing item
 const dislikeClothingItem = (req, res) => {
   const { itemId } = req.params;
+  const userId = req.user?._id;
+
+  if (!userId) {
+    return res.status(BAD_REQUEST).send({ message: "User not authenticated" });
+  }
+
   clothingItems
-    .findById(itemId)
-    .then((item) => {
-      if (!item) {
-        const error = new Error("Clothing item not found");
-        error.statusCode = NOT_FOUND;
-        throw error;
-      }
-      let userId = resolveUserId(req);
-      if (!userId) {
-        // fallback: check common locations explicitly
-        userId =
-          (req.body && (req.body.userId || req.body._id || req.body.user)) ||
-          (req.query && (req.query.userId || req.query._id)) ||
-          (req.get && (req.get("x-user-id") || req.get("user-id")));
-        if (userId) {
-          console.error(
-            "dislikeClothingItem: used fallback userId from request",
-            { userId }
-          );
-        }
-      }
-      if (!userId) {
-        // log details to help diagnose why user id resolution failed (esp. for DELETE bodies)
-        console.error("dislikeClothingItem: resolveUserId returned null", {
-          method: req.method,
-          path: req.path,
-          headers: req.headers,
-          body: req.body,
-          query: req.query,
-          params: req.params,
-        });
-        logUnresolved(req);
-        if (process.env.AUTO_TEST_USER === "true") {
-          return User.findOne()
-            .then((u) => {
-              if (u) return u._id;
-              return User.create({
-                name: "__auto_test_user__",
-                avatar: "https://example.com/auto.png",
-              }).then((nu) => nu._id);
-            })
-            .then((uid) =>
-              clothingItems.findByIdAndUpdate(
-                itemId,
-                { $pull: { likes: uid } },
-                { new: true }
-              )
-            );
-        }
-        const error = new Error("User not authenticated");
-        error.statusCode = BAD_REQUEST;
-        throw error;
-      }
-      return clothingItems.findByIdAndUpdate(
-        itemId,
-        { $pull: { likes: userId } },
-        { new: true }
-      );
+    .findByIdAndUpdate(itemId, { $pull: { likes: userId } }, { new: true })
+    .orFail(() => {
+      const error = new Error("Clothing item not found");
+      error.statusCode = NOT_FOUND;
+      throw error;
     })
     .then((updatedItem) => res.status(OK).send(updatedItem))
     .catch((err) => {
-      if (err.name === "CastError")
+      if (err.name === "CastError") {
         return res.status(BAD_REQUEST).send({ message: "Invalid item ID" });
-      if (err.name === "DocumentNotFoundError")
-        return res
-          .status(NOT_FOUND)
-          .send({ message: "Clothing item not found" });
-      if (err.statusCode)
+      }
+      if (err.statusCode) {
         return res.status(err.statusCode).send({ message: err.message });
+      }
       return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
     });
 };
