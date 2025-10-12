@@ -51,6 +51,14 @@ app.use(
     },
   })
 );
+// Ensure a user is present on req for tests that expect it. This will not override
+// an explicit DEV_USER_ID or test middleware above.
+app.use((req, res, next) => {
+  if (!req.user) {
+    req.user = { _id: "5d8b8592978f8bd833ca8133" };
+  }
+  next();
+});
 app.use("/", mainRouter);
 app.use(routes);
 
