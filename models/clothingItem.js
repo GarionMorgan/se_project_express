@@ -13,7 +13,7 @@ const clothingItemSchema = new mongoose.Schema({
     required: true,
     enum: ["hot", "warm", "cold"],
   },
-  imageURL: {
+  imageUrl: {
     type: String,
     required: [true, "The imageUrl field is required"],
     validate: {
@@ -25,6 +25,19 @@ const clothingItemSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
     ref: "user",
     default: [],
+  },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "user",
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
   },
 });
 

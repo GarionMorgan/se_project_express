@@ -1,4 +1,4 @@
-const clothingItems = require("../models/clothingItem");
+const ClothingItem = require("../models/clothingItem");
 const User = require("../models/user");
 const {
   OK,
@@ -101,8 +101,7 @@ function resolveUserId(req) {
 function logUnresolved(req) {
   if (!process.env.DEBUG) return;
   try {
-    /* eslint-disable-next-line no-console */
-    console.debug("resolveUserId failed for request:", {
+    console.info("resolveUserId failed for request:", {
       headers: req && req.headers,
       body: req && req.body,
       query: req && req.query,
@@ -114,32 +113,31 @@ function logUnresolved(req) {
   }
 }
 
-// Create clothing item (accepts imageURL, imageUrl, image, link)
+// Create clothing item (accepts imageUrl, imageUrl, image, link)
 const createClothingItem = (req, res) => {
   const { name, weather } = req.body || {};
-  const imageURL =
+  const imageUrl =
     (req.body &&
-      (req.body.imageURL ||
+      (req.body.imageUrl ||
         req.body.imageUrl ||
         req.body.image ||
         req.body.link)) ||
     null;
 
-  clothingItems
-    .create({ name, weather, imageURL })
+  ClothingItem.create({ name, weather, imageUrl, owner: req.user._id })
     .then((newClothingItem) => {
       const result = newClothingItem.toObject
         ? newClothingItem.toObject()
         : newClothingItem;
       if (req.body) {
         if (Object.prototype.hasOwnProperty.call(req.body, "link"))
-          result.link = imageURL;
+          result.link = imageUrl;
         if (Object.prototype.hasOwnProperty.call(req.body, "image"))
-          result.image = imageURL;
+          result.image = imageUrl;
         if (Object.prototype.hasOwnProperty.call(req.body, "imageUrl"))
-          result.imageUrl = imageURL;
-        if (Object.prototype.hasOwnProperty.call(req.body, "imageURL"))
-          result.imageURL = imageURL;
+          result.imageUrl = imageUrl;
+        if (Object.prototype.hasOwnProperty.call(req.body, "imageUrl"))
+          result.imageUrl = imageUrl;
       }
       return res.status(CREATED).send(result);
     })
@@ -154,8 +152,7 @@ const createClothingItem = (req, res) => {
 
 // Get all clothing items
 const getClothingItems = (req, res) => {
-  clothingItems
-    .find({})
+  ClothingItem.find({})
     .then((items) => res.status(OK).send(items))
     .catch((err) => {
       if (err.name === "ValidationError")
@@ -167,8 +164,7 @@ const getClothingItems = (req, res) => {
 // Get clothing item by id
 const getClothingItemById = (req, res) => {
   const { itemId } = req.params;
-  clothingItems
-    .findById(itemId)
+  ClothingItem.findById(itemId)
     .orFail(() => {
       const error = new Error("Clothing item not found");
       error.statusCode = NOT_FOUND;
@@ -191,13 +187,12 @@ const getClothingItemById = (req, res) => {
 // Update clothing item
 const updateClothingItem = (req, res) => {
   const { itemId } = req.params;
-  const { name, weather, imageURL } = req.body || {};
-  clothingItems
-    .findByIdAndUpdate(
-      itemId,
-      { name, weather, imageURL },
-      { new: true, runValidators: true }
-    )
+  const { name, weather, imageUrl } = req.body || {};
+  ClothingItem.findByIdAndUpdate(
+    itemId,
+    { name, weather, imageUrl },
+    { new: true, runValidators: true }
+  )
     .orFail(() => {
       const error = new Error("Clothing item not found");
       error.statusCode = NOT_FOUND;
@@ -222,8 +217,7 @@ const updateClothingItem = (req, res) => {
 // Delete clothing item
 const deleteClothingItem = (req, res) => {
   const { itemId } = req.params;
-  clothingItems
-    .findByIdAndDelete(itemId)
+  ClothingItem.findByIdAndDelete(itemId)
     .orFail(() => {
       const error = new Error("Clothing item not found");
       error.statusCode = NOT_FOUND;
@@ -264,17 +258,15 @@ const likeClothingItem = async (req, res, next) => {
         throw err;
       }
     }
-    const updatedItem = await clothingItems
-      .findByIdAndUpdate(
-        itemId,
-        { $addToSet: { likes: userId } },
-        { new: true }
-      )
-      .orFail(() => {
-        const error = new Error("Clothing item not found");
-        error.statusCode = NOT_FOUND;
-        throw error;
-      });
+    const updatedItem = await ClothingItem.findByIdAndUpdate(
+      itemId,
+      { $addToSet: { likes: userId } },
+      { new: true }
+    ).orFail(() => {
+      const error = new Error("Clothing item not found");
+      error.statusCode = NOT_FOUND;
+      throw error;
+    });
     return res.status(OK).send(updatedItem);
   } catch (err) {
     return next(err);
@@ -302,13 +294,15 @@ const dislikeClothingItem = async (req, res, next) => {
         throw err;
       }
     }
-    const updatedItem = await clothingItems
-      .findByIdAndUpdate(itemId, { $pull: { likes: userId } }, { new: true })
-      .orFail(() => {
-        const error = new Error("Clothing item not found");
-        error.statusCode = NOT_FOUND;
-        throw error;
-      });
+    const updatedItem = await ClothingItem.findByIdAndUpdate(
+      itemId,
+      { $pull: { likes: userId } },
+      { new: true }
+    ).orFail(() => {
+      const error = new Error("Clothing item not found");
+      error.statusCode = NOT_FOUND;
+      throw error;
+    });
     return res.status(OK).send(updatedItem);
   } catch (err) {
     return next(err);
