@@ -7,7 +7,7 @@ const {
   CREATED,
 } = require("../utils/errors");
 
-//Get /users
+// Get /users
 const getUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(OK).send(users))
@@ -15,7 +15,7 @@ const getUsers = (req, res) => {
       res.status(INTERNAL_SERVER_ERROR).send({ message: err.message })
     );
 };
-//create /users
+// create /users
 const createUser = (req, res) => {
   const { name, avatar } = req.body;
   User.create({ name, avatar })
@@ -23,15 +23,15 @@ const createUser = (req, res) => {
     .catch((err) => {
       if (err.name === "ValidationError") {
         return res.status(BAD_REQUEST).send({ message: err.message });
-      } else if (err.statusCode) {
-        // If a specific statusCode was attached earlier (e.g. .orFail), forward it
-        return res.status(err.statusCode).send({ message: err.message });
-      } else {
-        return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
       }
+      // If a specific statusCode was attached earlier (e.g. .orFail), forward it
+      if (err.statusCode) {
+        return res.status(err.statusCode).send({ message: err.message });
+      }
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
     });
 };
-//get /users/:userId
+// get /users/:userId
 const getUserById = (req, res) => {
   const { userId } = req.params;
   User.findById(userId)
@@ -44,13 +44,14 @@ const getUserById = (req, res) => {
     .catch((err) => {
       if (err.name === "CastError") {
         return res.status(BAD_REQUEST).send({ message: "Invalid user ID" });
-      } else if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: "User not found" });
-      } else if (err.statusCode) {
-        return res.status(err.statusCode).send({ message: err.message });
-      } else {
-        return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
       }
+      if (err.name === "DocumentNotFoundError") {
+        return res.status(NOT_FOUND).send({ message: "User not found" });
+      }
+      if (err.statusCode) {
+        return res.status(err.statusCode).send({ message: err.message });
+      }
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
     });
 };
 
