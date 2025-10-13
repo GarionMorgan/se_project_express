@@ -1,5 +1,4 @@
 const ClothingItem = require("../models/clothingItem");
-const User = require("../models/user");
 const {
   OK,
   CREATED,
@@ -115,38 +114,19 @@ function logUnresolved(req) {
 
 // Create clothing item (accepts imageUrl, imageUrl, image, link)
 const createClothingItem = (req, res) => {
-  const { name, weather } = req.body || {};
-  const imageUrl =
-    (req.body &&
-      (req.body.imageUrl ||
-        req.body.imageUrl ||
-        req.body.image ||
-        req.body.link)) ||
-    null;
+  const { name, weather, imageUrl } = req.body;
 
   ClothingItem.create({ name, weather, imageUrl, owner: req.user._id })
     .then((newClothingItem) => {
-      const result = newClothingItem.toObject
-        ? newClothingItem.toObject()
-        : newClothingItem;
-      if (req.body) {
-        if (Object.prototype.hasOwnProperty.call(req.body, "link"))
-          result.link = imageUrl;
-        if (Object.prototype.hasOwnProperty.call(req.body, "image"))
-          result.image = imageUrl;
-        if (Object.prototype.hasOwnProperty.call(req.body, "imageUrl"))
-          result.imageUrl = imageUrl;
-        if (Object.prototype.hasOwnProperty.call(req.body, "imageUrl"))
-          result.imageUrl = imageUrl;
-      }
-      return res.status(CREATED).send(result);
+      res.status(CREATED).send(newClothingItem);
     })
     .catch((err) => {
-      if (err.name === "ValidationError")
-        return res.status(BAD_REQUEST).send({ message: err.message });
-      if (err.statusCode)
-        return res.status(err.statusCode).send({ message: err.message });
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+      if (err.name === "ValidationError") {
+        return res.status(BAD_REQUEST).send({ message: "Invalid data" });
+      }
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
 };
 
@@ -156,61 +136,10 @@ const getClothingItems = (req, res) => {
     .then((items) => res.status(OK).send(items))
     .catch((err) => {
       if (err.name === "ValidationError")
-        return res.status(BAD_REQUEST).send({ message: err.message });
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
-    });
-};
-
-// Get clothing item by id
-const getClothingItemById = (req, res) => {
-  const { itemId } = req.params;
-  ClothingItem.findById(itemId)
-    .orFail(() => {
-      const error = new Error("Clothing item not found");
-      error.statusCode = NOT_FOUND;
-      throw error;
-    })
-    .then((item) => res.status(OK).send(item))
-    .catch((err) => {
-      if (err.name === "CastError")
-        return res.status(BAD_REQUEST).send({ message: "Invalid item ID" });
-      if (err.name === "DocumentNotFoundError")
-        return res
-          .status(NOT_FOUND)
-          .send({ message: "Clothing item not found" });
-      if (err.statusCode)
-        return res.status(err.statusCode).send({ message: err.message });
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
-    });
-};
-
-// Update clothing item
-const updateClothingItem = (req, res) => {
-  const { itemId } = req.params;
-  const { name, weather, imageUrl } = req.body || {};
-  ClothingItem.findByIdAndUpdate(
-    itemId,
-    { name, weather, imageUrl },
-    { new: true, runValidators: true }
-  )
-    .orFail(() => {
-      const error = new Error("Clothing item not found");
-      error.statusCode = NOT_FOUND;
-      throw error;
-    })
-    .then((updatedItem) => res.status(OK).send(updatedItem))
-    .catch((err) => {
-      if (err.name === "ValidationError")
-        return res.status(BAD_REQUEST).send({ message: err.message });
-      if (err.name === "CastError")
-        return res.status(BAD_REQUEST).send({ message: "Invalid item ID" });
-      if (err.name === "DocumentNotFoundError")
-        return res
-          .status(NOT_FOUND)
-          .send({ message: "Clothing item not found" });
-      if (err.statusCode)
-        return res.status(err.statusCode).send({ message: err.message });
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+        return res.status(BAD_REQUEST).send({ message: "Invalid data" });
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
 };
 
@@ -232,88 +161,92 @@ const deleteClothingItem = (req, res) => {
           .status(NOT_FOUND)
           .send({ message: "Clothing item not found" });
       if (err.statusCode)
-        return res.status(err.statusCode).send({ message: err.message });
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+        return res
+          .status(err.statusCode)
+          .send({ message: "An error has occurred" });
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
 };
 
 // Like clothing item
-const likeClothingItem = async (req, res, next) => {
-  try {
-    const { itemId } = req.params;
-    let userId = resolveUserId(req);
-    if (!userId) {
-      logUnresolved(req);
-      if (process.env.AUTO_TEST_USER === "true") {
-        let u = await User.findOne();
-        if (!u)
-          u = await User.create({
-            name: "__auto_test_user__",
-            avatar: "https://example.com/auto.png",
-          });
-        userId = u._id;
-      } else {
-        const err = new Error("User not authenticated");
-        err.statusCode = BAD_REQUEST;
-        throw err;
-      }
-    }
-    const updatedItem = await ClothingItem.findByIdAndUpdate(
-      itemId,
-      { $addToSet: { likes: userId } },
-      { new: true }
-    ).orFail(() => {
+const likeClothingItem = (req, res, next) => {
+  const { itemId } = req.params;
+  const userId = resolveUserId(req);
+
+  if (!userId) {
+    const err = new Error("User not authenticated");
+    err.statusCode = BAD_REQUEST;
+    return next(err);
+  }
+
+  ClothingItem.findByIdAndUpdate(
+    itemId,
+    { $addToSet: { likes: userId } },
+    { new: true }
+  )
+    .orFail(() => {
       const error = new Error("Clothing item not found");
       error.statusCode = NOT_FOUND;
       throw error;
+    })
+    .then((updatedItem) => {
+      res.status(OK).send(updatedItem);
+    })
+    .catch((err) => {
+      if (err.name === "DocumentNotFoundError") {
+        return res.status(NOT_FOUND).send({ message: "Item not found" });
+      }
+      if (err.name === "CastError") {
+        return res.status(BAD_REQUEST).send({ message: "Invalid item ID" });
+      }
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
-    return res.status(OK).send(updatedItem);
-  } catch (err) {
-    return next(err);
-  }
 };
 
 // Dislike clothing item
-const dislikeClothingItem = async (req, res, next) => {
-  try {
-    const { itemId } = req.params;
-    let userId = resolveUserId(req);
-    if (!userId) {
-      logUnresolved(req);
-      if (process.env.AUTO_TEST_USER === "true") {
-        let u = await User.findOne();
-        if (!u)
-          u = await User.create({
-            name: "__auto_test_user__",
-            avatar: "https://example.com/auto.png",
-          });
-        userId = u._id;
-      } else {
-        const err = new Error("User not authenticated");
-        err.statusCode = BAD_REQUEST;
-        throw err;
-      }
-    }
-    const updatedItem = await ClothingItem.findByIdAndUpdate(
-      itemId,
-      { $pull: { likes: userId } },
-      { new: true }
-    ).orFail(() => {
+const dislikeClothingItem = (req, res, next) => {
+  const { itemId } = req.params;
+  const userId = resolveUserId(req);
+
+  if (!userId) {
+    const err = new Error("User not authenticated");
+    err.statusCode = BAD_REQUEST;
+    return next(err);
+  }
+
+  ClothingItem.findByIdAndUpdate(
+    itemId,
+    { $pull: { likes: userId } },
+    { new: true }
+  )
+    .orFail(() => {
       const error = new Error("Clothing item not found");
       error.statusCode = NOT_FOUND;
       throw error;
+    })
+    .then((updatedItem) => {
+      res.status(OK).send(updatedItem);
+    })
+    .catch((err) => {
+      if (err.name === "DocumentNotFoundError") {
+        return res.status(NOT_FOUND).send({ message: "Item not found" });
+      }
+      if (err.name === "CastError") {
+        return res.status(BAD_REQUEST).send({ message: "Invalid item ID" });
+      }
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
-    return res.status(OK).send(updatedItem);
-  } catch (err) {
-    return next(err);
-  }
 };
 
 module.exports = {
   createClothingItem,
   getClothingItems,
-  getClothingItemById,
-  updateClothingItem,
   deleteClothingItem,
   likeClothingItem,
   dislikeClothingItem,

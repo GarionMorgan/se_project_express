@@ -60,11 +60,6 @@ app.use((req, res, next) => {
   next();
 });
 app.use("/", mainRouter);
-app.use(routes);
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
 
 // Global error handler to ensure JSON error responses (must be last)
 app.use((err, req, res, next) => {
