@@ -97,21 +97,6 @@ function resolveUserId(req) {
   return null;
 }
 
-function logUnresolved(req) {
-  if (!process.env.DEBUG) return;
-  try {
-    console.info("resolveUserId failed for request:", {
-      headers: req && req.headers,
-      body: req && req.body,
-      query: req && req.query,
-      user: req && req.user,
-      params: req && req.params,
-    });
-  } catch (e) {
-    // ignore
-  }
-}
-
 // Create clothing item (accepts imageUrl, imageUrl, image, link)
 const createClothingItem = (req, res) => {
   const { name, weather, imageUrl } = req.body;
@@ -181,7 +166,7 @@ const likeClothingItem = (req, res, next) => {
     return next(err);
   }
 
-  ClothingItem.findByIdAndUpdate(
+  return ClothingItem.findByIdAndUpdate(
     itemId,
     { $addToSet: { likes: userId } },
     { new: true }
@@ -218,7 +203,7 @@ const dislikeClothingItem = (req, res, next) => {
     return next(err);
   }
 
-  ClothingItem.findByIdAndUpdate(
+  return ClothingItem.findByIdAndUpdate(
     itemId,
     { $pull: { likes: userId } },
     { new: true }
