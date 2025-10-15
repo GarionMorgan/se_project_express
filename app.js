@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const mainRouter = require("./routes/index");
+const { INTERNAL_SERVER_ERROR } = require("./utils/errors");
 const routes = require("./routes");
 
 const app = express();
@@ -64,7 +65,7 @@ app.use("/", mainRouter);
 // Global error handler to ensure JSON error responses (must be last)
 app.use((err, req, res, next) => {
   if (res.headersSent) return next(err);
-  const status = err.statusCode || err.status || 500;
+  const status = err.statusCode || err.status || INTERNAL_SERVER_ERROR;
   return res
     .status(status)
     .json({ message: err.message || "Internal Server Error" });
