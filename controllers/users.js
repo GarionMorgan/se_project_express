@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const {
   BAD_REQUEST,
@@ -8,13 +9,16 @@ const {
   CREATED,
   DUPLICATE_KEY_ERROR,
   CONFLICT,
+  UNAUTHORIZED_ERROR,
 } = require("../utils/errors");
+
+const { JWT_SECRET } = require("../utils/config");
 
 // Get /users
 const getUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(OK).send(users))
-    .catch((err) =>
+    .catch(() =>
       res
         .status(INTERNAL_SERVER_ERROR)
         .send({ message: "An error has occurred on the server" })
@@ -27,7 +31,7 @@ const createUser = (req, res) => {
   bcrypt
     .hash(password, 10) // hash with 10 salt rounds
     .then((hashedPassword) => {
-      return User.create({
+      User.create({
         name,
         avatar,
         email,
@@ -36,8 +40,15 @@ const createUser = (req, res) => {
     })
     .then((newUser) => {
       // exclude password
-      const { _id, name, avatar, email } = newUser;
-      res.status(CREATED).send({ _id, name, avatar, email });
+      const {
+        _id,
+        name: Username,
+        avatar: userAvatar,
+        email: userEmail,
+      } = newUser;
+      res
+        .status(CREATED)
+        .send({ _id, name: Username, avatar: userAvatar, email: userEmail });
     })
     .catch((err) => {
       if (err.code === DUPLICATE_KEY_ERROR) {
@@ -80,4 +91,21 @@ const getUserById = (req, res) => {
     });
 };
 
-module.exports = { getUsers, createUser, getUserById };
+const login = (req, res) => {
+  const { email, password } = req.body;
+
+  User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      res.send({ token });
+    })
+    .catch(() => {
+      res
+        .status(UNAUTHORIZED_ERROR)
+        .send({ message: "Invalid email or password" });
+    });
+};
+
+module.exports = { getUsers, createUser, getUserById, login };
