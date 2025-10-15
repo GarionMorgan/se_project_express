@@ -24,14 +24,14 @@ const getUsers = (req, res) => {
         .send({ message: "An error has occurred on the server" })
     );
 };
-// create /users
+// POST /signup
 const createUser = (req, res) => {
   const { name, avatar, email, password } = req.body;
 
   bcrypt
     .hash(password, 10) // hash with 10 salt rounds
     .then((hashedPassword) => {
-      User.create({
+      return User.create({
         name,
         avatar,
         email,
@@ -63,34 +63,17 @@ const createUser = (req, res) => {
     });
 };
 
-// get /users/:userId
-const getUserById = (req, res) => {
-  const { userId } = req.params;
+// GET /users/me
+const getCurrentUser = (req, res, next) => {
+  const userId = req.user._id;
+
   User.findById(userId)
-    .orFail(() => {
-      const error = new Error("User not found");
-      error.statusCode = NOT_FOUND;
-      throw error;
-    })
-    .then((user) => res.status(OK).send(user))
-    .catch((err) => {
-      if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid user ID" });
-      }
-      if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: "User not found" });
-      }
-      if (err.statusCode) {
-        return res
-          .status(err.statusCode)
-          .send({ message: "An error has occurred" });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" });
-    });
+    .orFail()
+    .then((user) => res.send(user))
+    .catch(next);
 };
 
+// POST /signin
 const login = (req, res) => {
   const { email, password } = req.body;
 
@@ -108,4 +91,4 @@ const login = (req, res) => {
     });
 };
 
-module.exports = { getUsers, createUser, getUserById, login };
+module.exports = { getUsers, createUser, login, getCurrentUser };
