@@ -6,15 +6,19 @@ const userRouter = require("./users");
 
 const clothingItemRouter = require("./clothingItem");
 
+// login route
+router.post("/signin", login);
+
+// registration route
+router.post("/signup", createUser);
+
+// protected resource routes
+
 router.use("/users", userRouter);
 
 router.use("/items", clothingItemRouter);
 
-// login route
-router.post("./signin", login);
-
-// registration route
-router.post("./signup", createUser);
+// catch all for unknown routes
 
 router.use((req, res) => {
   res.status(NOT_FOUND).send({ message: "Router not found" });
