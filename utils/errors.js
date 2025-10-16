@@ -6,6 +6,7 @@ const INTERNAL_SERVER_ERROR = 500;
 const DUPLICATE_KEY_ERROR = 11000;
 const CONFLICT = 409;
 const UNAUTHORIZED_ERROR = 401;
+const FORBIDDEN = 403;
 
 module.exports = {
   BAD_REQUEST,
@@ -16,4 +17,5 @@ module.exports = {
   DUPLICATE_KEY_ERROR,
   CONFLICT,
   UNAUTHORIZED_ERROR,
+  FORBIDDEN,
 };
