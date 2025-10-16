@@ -26,5 +26,5 @@ module.exports = (req, res, next) => {
   req.user = payload;
 
   // pass control to next middleware/route
-  next();
+  return next();
 };

@@ -30,14 +30,12 @@ const createUser = (req, res) => {
 
   bcrypt
     .hash(password, 10) // hash with 10 salt rounds
-    .then((hashedPassword) => {
-      return User.create({
+    .then((hashedPassword) => User.create({
         name,
         avatar,
         email,
         password: hashedPassword,
-      });
-    })
+      }))
     .then((newUser) => {
       // exclude password
       const {
