@@ -14,39 +14,31 @@ const {
 
 const { JWT_SECRET } = require("../utils/config");
 
-// Get /users
-const getUsers = (req, res) => {
-  User.find({})
-    .then((users) => res.status(OK).send(users))
-    .catch(() =>
-      res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" })
-    );
-};
 // POST /signup
 const createUser = (req, res) => {
   const { name, avatar, email, password } = req.body;
 
   bcrypt
     .hash(password, 10) // hash with 10 salt rounds
-    .then((hashedPassword) => User.create({
+    .then((hashedPassword) =>
+      User.create({
         name,
         avatar,
         email,
         password: hashedPassword,
-      }))
+      })
+    )
     .then((newUser) => {
       // exclude password
       const {
         _id,
-        name: Username,
+        name: username,
         avatar: userAvatar,
         email: userEmail,
       } = newUser;
       res
         .status(CREATED)
-        .send({ _id, name: Username, avatar: userAvatar, email: userEmail });
+        .send({ _id, name: username, avatar: userAvatar, email: userEmail });
     })
     .catch((err) => {
       if (err.code === DUPLICATE_KEY_ERROR) {
@@ -108,7 +100,7 @@ const login = (req, res) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
         expiresIn: "7d",
       });
-      res.send({ token });
+      res.status(OK).send({ token });
     })
     .catch(() => {
       res
@@ -118,7 +110,6 @@ const login = (req, res) => {
 };
 
 module.exports = {
-  getUsers,
   createUser,
   login,
   getCurrentUser,
