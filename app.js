@@ -10,7 +10,7 @@ const { PORT = 3001 } = process.env;
 
 const corsOptions = {
   origin: "http://localhost:3000",
-  methods: ["GET", "POST", "PATCH", "DELETE"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
