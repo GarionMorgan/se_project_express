@@ -2,7 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const mainRouter = require("./routes/index");
-const { INTERNAL_SERVER_ERROR } = require("./utils/errors");
+const errorHandler = require("./middlewares/error-handler");
+const { errors } = require("celebrate");
+const { requestLogger, errorLogger } = require("./middlewares/logger");
 
 const app = express();
 
@@ -43,16 +45,21 @@ app.use(
   })
 );
 
+app.use(requestLogger);
+
+// routes
+
 app.use("/", mainRouter);
 
+// centralized error logging
+app.use(errorLogger);
+
+// catching celebrate validation errors
+app.use(errors());
+
 // Global error handler to ensure JSON error responses (must be last)
-app.use((err, req, res, next) => {
-  if (res.headersSent) return next(err);
-  const status = err.statusCode || err.status || INTERNAL_SERVER_ERROR;
-  return res
-    .status(status)
-    .json({ message: err.message || "Internal Server Error" });
-});
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

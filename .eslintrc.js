@@ -1,5 +1,6 @@
 module.exports = {
   env: {
+    browser: true,
     es2021: true,
     node: true,
   },
@@ -21,7 +22,10 @@ module.exports = {
   },
   rules: {
     "no-console": ["warn", { allow: ["warn", "error", "info"] }],
-    "no-underscore-dangle": ["error", { allow: ["_id"] }],
-    "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    "no-underscore-dangle": [
+      "error",
+      { allow: ["_id"], argsIgnorePattern: "next" },
+    ],
+    "no-unused-vars": ["error", { argsIgnorePattern: "next" }],
   },
 };
