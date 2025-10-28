@@ -14,7 +14,7 @@ const dbUrl = process.env.DATABASE_URL || "mongodb://127.0.0.1:27017/wtwr_db";
 const port = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: "https://knowtwrtoday.jumpingcrab.com",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
