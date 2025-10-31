@@ -17,6 +17,8 @@ JavaScript
 bycrypt
 validation
 authentication
+pm2
+google cloud platform
 
 ### Testing
 
@@ -24,4 +26,15 @@ Before committing your code, make sure you edit the file `sprint.txt` in the roo
 
 ### Project Pitch Video
 
-Check out https://drive.google.com/file/d/1NogH2R-ABGrrIenvjs7oSvwRGCg0dpoe/view?usp=sharing, where I describe my project and some challenges I faced while building it.
+[First video explaining how the back end is set up ]Check out https://drive.google.com/file/d/1NogH2R-ABGrrIenvjs7oSvwRGCg0dpoe/view?usp=sharing, where I describe my project and some challenges I faced while building it.
+
+[Second video explaining how the backend and frontend were connected to the Cloud] Check out https://drive.google.com/file/d/1YYouA9xLPWMRLWvQ-IHN1W4GffFFA0II/view?usp=sharing
+
+### Cloud Deployment
+
+https://knowtwrtoday.jumpingcrab.com/ is the link to my published website
+
+### Front end repository
+
+Here is a link to my front end repository
+https://github.com/GarionMorgan/se_project_react
