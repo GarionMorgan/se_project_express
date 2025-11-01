@@ -1,13 +1,9 @@
 const asyncHandler = require("../utils/asyncHandler");
 const ClothingItem = require("../models/clothingItem");
-const {
-  OK,
-  CREATED,
-  BAD_REQUEST,
-  NOT_FOUND,
-  INTERNAL_SERVER_ERROR,
-  FORBIDDEN,
-} = require("../utils/errors");
+const { OK, CREATED } = require("../utils/errors");
+const UnauthorizedError = require("../errors/UnauthorizedError");
+const NotFoundError = require("../errors/NotFoundError");
+const ForbiddenError = require("../errors/ForbiddenError");
 
 // Create clothing item (accepts imageUrl, imageUrl, image, link)
 const createClothingItem = asyncHandler(async (req, res) => {
@@ -15,9 +11,7 @@ const createClothingItem = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   if (!userId) {
-    const err = new Error("User not authenticated");
-    err.statusCode = BAD_REQUEST;
-    throw err;
+    throw new UnauthorizedError("User not authenticated");
   }
 
   const newClothingItem = await ClothingItem.create({
@@ -42,22 +36,16 @@ const deleteClothingItem = asyncHandler(async (req, res) => {
   const currentUserId = req.user?._id;
 
   if (!currentUserId) {
-    const err = new Error("User not authenticated");
-    err.statusCode = BAD_REQUEST;
-    throw err;
+    throw new UnauthorizedError("User not authenticated");
   }
 
   const item = await ClothingItem.findById(itemId).orFail(() => {
-    const err = new Error("Clothing item not found");
-    err.statusCode = NOT_FOUND;
-    throw err;
+    throw new NotFoundError("Clothing item not found");
   });
 
   // ownership check
   if (item.owner.toString() !== currentUserId.toString()) {
-    const err = new Error("Access denied");
-    err.statusCode = FORBIDDEN;
-    throw err;
+    throw new ForbiddenError("Access denied");
   }
 
   await item.deleteOne();
@@ -70,9 +58,7 @@ const likeClothingItem = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   if (!userId) {
-    const err = new Error("User not authenticated");
-    err.statusCode = BAD_REQUEST;
-    throw err;
+    throw new UnauthorizedError("User not authenticated");
   }
 
   const updatedItem = await ClothingItem.findByIdAndUpdate(
@@ -80,9 +66,7 @@ const likeClothingItem = asyncHandler(async (req, res) => {
     { $addToSet: { likes: userId } },
     { new: true }
   ).orFail(() => {
-    const error = new Error("Clothing item not found");
-    error.statusCode = NOT_FOUND;
-    throw error;
+    throw new NotFoundError("Clothing item not found");
   });
 
   res.status(OK).send(updatedItem);
@@ -94,9 +78,7 @@ const dislikeClothingItem = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   if (!userId) {
-    const err = new Error("User not authenticated");
-    err.statusCode = BAD_REQUEST;
-    throw err;
+    throw new UnauthorizedError("User not authenticated");
   }
 
   const updatedItem = await ClothingItem.findByIdAndUpdate(
@@ -104,9 +86,7 @@ const dislikeClothingItem = asyncHandler(async (req, res) => {
     { $pull: { likes: userId } },
     { new: true }
   ).orFail(() => {
-    const error = new Error("Clothing item not found");
-    error.statusCode = NOT_FOUND;
-    throw error;
+    throw new NotFoundError("Clothing item not found");
   });
 
   res.status(OK).send(updatedItem);

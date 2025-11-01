@@ -1,13 +1,10 @@
-const asyncHandler = require("../utils/asyncHandler");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const asyncHandler = require("../utils/asyncHandler");
 const User = require("../models/user");
-const {
-  NOT_FOUND,
-  OK,
-  CREATED,
-  UNAUTHORIZED_ERROR,
-} = require("../utils/errors");
+const { OK, CREATED } = require("../utils/errors");
+const UnauthorizedError = require("../errors/UnauthorizedError");
+const NotFoundError = require("../errors/NotFoundError");
 
 const { JWT_SECRET } = require("../utils/config");
 
@@ -35,15 +32,11 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   if (!userId) {
-    const err = new Error("User not authenticated");
-    err.statusCode = UNAUTHORIZED_ERROR;
-    throw err;
+    throw new UnauthorizedError("User not authenticated");
   }
 
   const user = await User.findById(userId).orFail(() => {
-    const err = new Error("User not found");
-    err.statusCode = NOT_FOUND;
-    throw err;
+    throw new NotFoundError("User not found");
   });
   res.send(user);
 });
@@ -58,9 +51,7 @@ const updateCurrentUser = asyncHandler(async (req, res) => {
     { name, avatar },
     { new: true, runValidators: true }
   ).orFail(() => {
-    const err = new Error("User not found");
-    err.statusCode = NOT_FOUND;
-    throw err;
+    throw new NotFoundError("User not found");
   });
 
   res.send(updatedUser);
