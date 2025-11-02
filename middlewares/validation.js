@@ -11,22 +11,24 @@ const validateURL = (value, helpers) => {
 
 // 1. Validate clothing item creation
 module.exports.validateCardBody = celebrate({
-  body: Joi.object().keys({
-    name: Joi.string().required().min(2).max(30).messages({
-      "string.min": 'The minimum length of the "name" field is 2',
-      "string.max": 'The maximum length of the "name" field is 30',
-      "string.empty": 'The "name" field must be filled in',
-    }),
-    imageUrl: Joi.string().required().custom(validateURL).messages({
-      "string.empty": 'The "imageUrl" field must be filled in',
-      "string.uri": 'the "imageUrl" field must be a valid url',
-    }),
-    weather: Joi.string().required().valid("hot", "warm", "cold").messages({
-      "any.only":
-        'The "weather" field must be one of the following values: hot, warm, cold',
-      "string.empty": 'The "weather" field must be filled in',
-    }),
-  }),
+  body: Joi.object()
+    .keys({
+      name: Joi.string().required().min(2).max(30).messages({
+        "string.min": 'The minimum length of the "name" field is 2',
+        "string.max": 'The maximum length of the "name" field is 30',
+        "string.empty": 'The "name" field must be filled in',
+      }),
+      imageUrl: Joi.string().required().custom(validateURL).messages({
+        "string.empty": 'The "imageUrl" field must be filled in',
+        "string.uri": 'the "imageUrl" field must be a valid url',
+      }),
+      weather: Joi.string().required().valid("hot", "warm", "cold").messages({
+        "any.only":
+          'The "weather" field must be one of the following values: hot, warm, cold',
+        "string.empty": 'The "weather" field must be filled in',
+      }),
+    })
+    .unknown(false),
 });
 
 // 2. Validate user creation
